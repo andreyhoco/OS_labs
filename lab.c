@@ -6,6 +6,12 @@
 #include <string.h>
 #include <errno.h>
 
+struct file_header {
+	char name[128];
+	char file_type;
+	int size;
+};
+
 void print_error(int errornum, char* file_name);
 
 int copy_data(int input_descriptor, int output_decriptor, int size);
