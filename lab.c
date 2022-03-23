@@ -24,15 +24,22 @@ int copy_data(int input_descriptor, int output_decriptor, int size);
 
 int write_in_archive(int archive_descriptor, char* directory);
 
+int open_archive(int archive_descriptor);
+
 char error_file[FILENAME_LENGTH];
 
 int main() {
-	mode_t old_mask = umask(003);
-	int out = open("./arch", O_WRONLY | O_CREAT, S_IRUSR | S_IWUSR | S_IXUSR | S_IRGRP | S_IWGRP | S_IXGRP);
-	int res = write_in_archive(out, "./papka");
-	if (res == -1) print_error(errno, error_file);
+	// int out = open("./arch", O_WRONLY | O_CREAT, 0774);
+	// if (out == -1) print_error(errno, "./arch");
+	// int res = write_in_archive(out, "./papka");
+	// if (res == -1) print_error(errno, error_file);
 
-	umask(old_mask);
+	int arch = open("./arch", O_RDONLY);
+	int res = open_archive(arch);
+
+	if (res == -1) print_error(errno, error_file);
+	if (res == -2) write(2, "Unexpected file type\0", 21);
+
 	exit(0);
 }
 
@@ -171,6 +178,78 @@ int write_in_archive(int archive_descriptor, char* directory) {
 		strncpy(error_file, directory, FILENAME_LENGTH);
 		error_file[FILENAME_LENGTH - 1] = '\0';
 		return -1;
+	}
+
+	return 0;
+}
+
+int open_archive(int archive_descriptor) {
+	struct file_header header;
+	if (read(archive_descriptor, &header, sizeof(header)) == -1) {
+		strncpy(error_file, ARCHIVE_NAME, FILENAME_LENGTH);
+		error_file[FILENAME_LENGTH - 1] = '\0';
+		return -1;	
+	}
+
+	switch (header.file_type) {
+		case SIMPLE_FILE: {
+			int out = open(header.name, O_WRONLY | O_CREAT, S_IRUSR | S_IWUSR | S_IXUSR | S_IRGRP | S_IWGRP | S_IXGRP);
+			if (out == -1) {
+				strncpy(error_file, header.name, FILENAME_LENGTH);
+				error_file[FILENAME_LENGTH - 1] = '\0';
+				return -1;
+			}
+
+			int copy_result = copy_data(archive_descriptor, out, header.size);
+
+			if (copy_result == -1) {
+				strncpy(error_file, ARCHIVE_NAME, FILENAME_LENGTH);
+				error_file[FILENAME_LENGTH - 1] = '\0';
+				return -1;
+			} else if (copy_result == -2) {
+				strncpy(error_file, header.name, FILENAME_LENGTH);
+				error_file[FILENAME_LENGTH - 1] = '\0';
+				return -1;
+			}
+
+			if (close(out) == -1) {
+				strncpy(error_file, header.name, FILENAME_LENGTH);
+				error_file[FILENAME_LENGTH - 1] = '\0';
+				return -1;
+			}
+			break;
+		}
+
+		case DIRECTORY: {
+			if (mkdir(header.name, 0774) == -1) {
+				strncpy(error_file, header.name, FILENAME_LENGTH);
+				error_file[FILENAME_LENGTH - 1] = '\0';
+				return -1;	
+			}
+
+			if (chdir(header.name) == -1) {
+				strncpy(error_file, header.name, FILENAME_LENGTH);
+				error_file[FILENAME_LENGTH - 1] = '\0';
+				return -1;	
+			}
+
+			for (int i = 0, open_res; i < header.size; i ++) {
+				if ((open_res = open_archive(archive_descriptor)) < 0) {
+					return open_res;
+				}
+			}
+
+			if (chdir("..") == -1) {
+				strncpy(error_file, header.name, FILENAME_LENGTH);
+				error_file[FILENAME_LENGTH - 1] = '\0';
+				return -1;	
+			}
+			break;
+		}
+
+		default: {
+			return -2;		
+		}
 	}
 
 	return 0;
