@@ -9,6 +9,7 @@
 
 #define FILENAME_LENGTH 128
 #define ARCHIVE_NAME "archive.arch"
+#define ARCHIVE_PATH "./archive.arch"
 #define DIRECTORY 1
 #define SIMPLE_FILE 2
 
@@ -31,22 +32,51 @@ int open_archive(int archive_descriptor);
 char error_file[FILENAME_LENGTH];
 
 int main() {
-	// int out = open("./arch", O_WRONLY | O_CREAT, 0774);
-	// if (out == -1) print_error(errno, "./arch");
-	// int res = write_in_archive(out, "./papka");
-	// if (res == -1) print_error(errno, error_file);
+	int res;
+	char archive_name[128];
+	char archive_path[128];
+	char input_dir[128];
 
-	// int arch = open("./arch", O_RDONLY);
-	// int res = open_archive(arch);
+	strncpy(archive_name, ARCHIVE_NAME, strlen(ARCHIVE_NAME));
+	strncpy(archive_path, ARCHIVE_NAME, strlen(ARCHIVE_PATH));
 
-	// if (res == -1) {
-	// 	print_error(errno, error_file);
-	// 	exit(-1);
-	// }
-	// if (res == -2) {
-	// 	print_type_error(error_file);
-	// 	exit(-1);
-	// }
+	int output = open(archive_path, O_WRONLY | O_CREAT, 0774);
+	if (output == -1) {
+		print_error(errno, archive_path);
+		exit(-1);
+	}
+
+	res = write_in_archive(output, input_dir);
+	if (res == -1) {
+		print_error(errno, error_file);
+		exit(-1);
+	}
+
+	if (close(output)) {
+		print_error(errno, archive_name);
+		exit(-1);
+	}
+
+	int archive_descriptor = open(archive_name, O_RDONLY);
+	if (archive_descriptor == -1) {
+		print_error(errno, archive_name);
+		exit(-1);
+	}
+
+	res = open_archive(archive_descriptor);
+
+	if (res == -1) {
+		print_error(errno, error_file);
+		exit(-1);
+	} else if (res == -2) {
+		print_type_error(error_file);
+		exit(-1);
+	}
+
+	if (close(archive_descriptor)) {
+		print_error(errno, archive_name);
+		exit(-1);
+	}
 
 	exit(0);
 }
