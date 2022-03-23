@@ -18,6 +18,8 @@ struct file_header {
 	int size;
 };
 
+void print_type_error(char* file_name);
+
 void print_error(int errornum, char* file_name);
 
 int copy_data(int input_descriptor, int output_decriptor, int size);
@@ -34,13 +36,26 @@ int main() {
 	// int res = write_in_archive(out, "./papka");
 	// if (res == -1) print_error(errno, error_file);
 
-	int arch = open("./arch", O_RDONLY);
-	int res = open_archive(arch);
+	// int arch = open("./arch", O_RDONLY);
+	// int res = open_archive(arch);
 
-	if (res == -1) print_error(errno, error_file);
-	if (res == -2) write(2, "Unexpected file type\0", 21);
+	// if (res == -1) {
+	// 	print_error(errno, error_file);
+	// 	exit(-1);
+	// }
+	// if (res == -2) {
+	// 	print_type_error(error_file);
+	// 	exit(-1);
+	// }
 
 	exit(0);
+}
+
+void print_type_error(char* file_name) {
+	char msg[150];
+	strncpy(msg, file_name, strlen(file_name));
+	strncat(msg, ": unexpected file type\n\0", 150 - strlen(": unexpected file type\n\0") + 1);
+	write(2, msg, strlen(msg) + 1);
 }
 
 void print_error(int errornum, char* file_name) {
@@ -248,6 +263,8 @@ int open_archive(int archive_descriptor) {
 		}
 
 		default: {
+			strncpy(error_file, header.name, FILENAME_LENGTH);
+			error_file[FILENAME_LENGTH - 1] = '\0';
 			return -2;		
 		}
 	}
