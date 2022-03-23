@@ -6,8 +6,13 @@
 #include <string.h>
 #include <errno.h>
 
+#define FILENAME_LENGTH 128
+#define ARCHIVE_NAME "archive.arch"
+#define DIRECTORY 1
+#define SIMPLE_FILE 2
+
 struct file_header {
-	char name[128];
+	char name[FILENAME_LENGTH];
 	char file_type;
 	int size;
 };
