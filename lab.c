@@ -111,6 +111,9 @@ int main(int argc, char* argv[]) {
 			res = write_in_archive(output, input_dir);
 			if (res == -1) {
 				print_error(errno, error_file);
+
+				if (close(output) == -1) print_error(errno, archive_path);
+				if (unlink(archive_path) == -1) print_error(errno, archive_path);
 				exit(-1);
 			}
 
