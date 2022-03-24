@@ -145,11 +145,16 @@ int write_in_archive(int archive_descriptor, char* directory) {
 	}
 
 	struct file_header dir_header;
-	if (strspn(directory, "./") > 0) {
-		strncpy(dir_header.name, directory + 2, FILENAME_LENGTH);
-	} else {
-		strncpy(dir_header.name, directory, FILENAME_LENGTH);
+
+	char* token;
+	const char delimiter[2] = "/";
+
+	token = strtok(directory, delimiter);
+	while(token != NULL) {
+		strncpy(dir_header.name, token, FILENAME_LENGTH);
+		token = strtok(NULL, delimiter);
 	}
+
 	dir_header.file_type = DIRECTORY;
 	dir_header.size = size;
 
