@@ -1,8 +1,11 @@
 name: cppcheck-action
 on:
   pull_request:
-    paths-ignore:
-    - 'README.md'
+    branches:
+      - main
+      - '*-code'
+    paths:
+    - '*.c'
 
 jobs:
   build:
