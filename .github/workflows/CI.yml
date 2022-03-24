@@ -15,6 +15,7 @@ jobs:
         with:
           github_token: ${{ secrets.GITHUB_TOKEN}}
           enable: all
+          output_file: "./cppcheck_out.txt"
 
       - name: publish report    
         uses: mikeal/publish-to-github-action@master
