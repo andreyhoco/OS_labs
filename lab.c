@@ -38,9 +38,9 @@ int main(int argc, char* argv[]) {
 	int res;
 	int opt;
 
-	char archive_path[128];
-	char directory_path[128];
-	char input_dir[128];
+	char archive_path[FILENAME_LENGTH];
+	char directory_path[FILENAME_LENGTH];
+	char input_dir[FILENAME_LENGTH];
 
 	strncpy(archive_path, ARCHIVE_NAME, strlen(ARCHIVE_NAME));
 	strncpy(directory_path, ".", strlen("."));
