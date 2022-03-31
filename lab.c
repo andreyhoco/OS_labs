@@ -6,9 +6,11 @@
 #include <string.h>
 #include <dirent.h>
 #include <errno.h>
+#include "error_handling.h"
 
 #define FILENAME_LENGTH 128
 #define ARCHIVE_NAME "./archive.arch"
+#define ARCHIVE_ERROR_NAME "archive file"
 #define DIRECTORY 1
 #define SIMPLE_FILE 2
 #define MODE_ARCH 1
@@ -252,7 +254,7 @@ int write_in_archive(int archive_descriptor, char* directory) {
 	dir_header.size = size;
 
 	if (write(archive_descriptor, &dir_header, sizeof(struct file_header)) == -1) {
-		strncpy(error_file, ARCHIVE_NAME, FILENAME_LENGTH);
+		strncpy(error_file, ARCHIVE_ERROR_NAME, FILENAME_LENGTH);
 		error_file[FILENAME_LENGTH - 1] = '\0';
 		return -1;
 	}
@@ -287,14 +289,14 @@ int write_in_archive(int archive_descriptor, char* directory) {
 			simple_header.file_type = SIMPLE_FILE;
 
 			if (write(archive_descriptor, &simple_header, sizeof(struct file_header)) == -1) {
-				strncpy(error_file, ARCHIVE_NAME, FILENAME_LENGTH);
+				strncpy(error_file, ARCHIVE_ERROR_NAME, FILENAME_LENGTH);
 				error_file[FILENAME_LENGTH - 1] = '\0';
 				return -1;
 			}
 
 			int copy_res = copy_data(input_descriptor, archive_descriptor, size_in_bytes);
 			if (copy_res == -1) {
-				strncpy(error_file, ARCHIVE_NAME, FILENAME_LENGTH);
+				strncpy(error_file, ARCHIVE_ERROR_NAME, FILENAME_LENGTH);
 				error_file[FILENAME_LENGTH - 1] = '\0';
 				return -1;
 			} else if (copy_res == -2) {
@@ -329,7 +331,7 @@ int write_in_archive(int archive_descriptor, char* directory) {
 int open_archive(int archive_descriptor) {
 	struct file_header header;
 	if (read(archive_descriptor, &header, sizeof(header)) == -1) {
-		strncpy(error_file, ARCHIVE_NAME, FILENAME_LENGTH);
+		strncpy(error_file, ARCHIVE_ERROR_NAME, FILENAME_LENGTH);
 		error_file[FILENAME_LENGTH - 1] = '\0';
 		return -1;	
 	}
@@ -346,7 +348,7 @@ int open_archive(int archive_descriptor) {
 			int copy_result = copy_data(archive_descriptor, out, header.size);
 
 			if (copy_result == -1) {
-				strncpy(error_file, ARCHIVE_NAME, FILENAME_LENGTH);
+				strncpy(error_file, ARCHIVE_ERROR_NAME, FILENAME_LENGTH);
 				error_file[FILENAME_LENGTH - 1] = '\0';
 				return -1;
 			} else if (copy_result == -2) {
