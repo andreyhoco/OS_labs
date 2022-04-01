@@ -1,5 +1,6 @@
 #include <unistd.h>
 #include <fcntl.h>
+#include <linux/limits.h>
 #include <stdlib.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -18,9 +19,9 @@ int main(int argc, char* argv[]) {
 	int res;
 	int opt;
 
-	char archive_path[FILENAME_LENGTH];
-	char directory_path[FILENAME_LENGTH];
-	char input_dir[FILENAME_LENGTH];
+	char archive_path[PATH_MAX];
+	char directory_path[PATH_MAX];
+	char input_dir[PATH_MAX];
 
 	strncpy(archive_path, ARCHIVE_NAME, strlen(ARCHIVE_NAME));
 	strncpy(directory_path, ".", strlen("."));
@@ -39,7 +40,7 @@ int main(int argc, char* argv[]) {
 					exit(-1);
 				}
 				
-				strncpy(input_dir, optarg, FILENAME_LENGTH);
+				strncpy(input_dir, optarg, PATH_MAX);
 				break;
 			}
 
@@ -55,7 +56,7 @@ int main(int argc, char* argv[]) {
 					exit(-1);
 				}
 
-				strncpy(archive_path, optarg, FILENAME_LENGTH);
+				strncpy(archive_path, optarg, PATH_MAX);
 				break;
 			}
 
@@ -66,9 +67,9 @@ int main(int argc, char* argv[]) {
 				}
 
 				if (mode == MODE_ARCH) {
-					strncpy(archive_path, optarg, FILENAME_LENGTH);
+					strncpy(archive_path, optarg, PATH_MAX);
 				} else if (mode == MODE_UNARCH) {
-					strncpy(directory_path, optarg, FILENAME_LENGTH);
+					strncpy(directory_path, optarg, PATH_MAX);
 				}
 				break;
 			}

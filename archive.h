@@ -1,4 +1,3 @@
-#define FILENAME_LENGTH 128
 #define ARCHIVE_NAME "./archive.arch"
 #define DIRECTORY 1
 #define SIMPLE_FILE 2
@@ -12,4 +11,4 @@ int write_in_archive(int archive_descriptor, char* directory);
 
 int open_archive(int archive_descriptor);
 
-char error_file[FILENAME_LENGTH];
+char error_file[PATH_MAX];
