@@ -82,7 +82,7 @@ int main(int argc, char* argv[]) {
 
 	switch (mode) {
 		case MODE_ARCH: {
-			int output = open(archive_path, O_WRONLY | O_CREAT, 0774);
+			int output = open(archive_path, O_WRONLY | O_CREAT, 0664);
 			if (output == -1) {
 				print_error(errno, archive_path);
 				exit(-1);
@@ -113,7 +113,7 @@ int main(int argc, char* argv[]) {
 
 			if (chdir(directory_path) == -1) {
 				if (errno == 2) {
-					if (mkdir(directory_path, 0774) == -1) {
+					if (mkdir(directory_path, 0775) == -1) {
 						print_error(errno, directory_path);
 						exit(-1);
 					}
