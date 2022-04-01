@@ -23,7 +23,7 @@ int copy_data(int input_descriptor, int output_decriptor, int size) {
 	char buffer[1024];
 	int num_of_readed;
 	int kbytes_num = size / 1024;
-	char bytes_buff[size % 1024];
+	int bytes_num = size % 1024;
 
 	// Сначала пытаемся копировать по кб
 	for (int i = 0; i < kbytes_num; i ++) {
@@ -32,8 +32,8 @@ int copy_data(int input_descriptor, int output_decriptor, int size) {
 	}
 
 	// Оставшуюся часть файла копируем в байтах
-	num_of_readed = read(input_descriptor, bytes_buff, sizeof(bytes_buff));
-	if (write(output_decriptor, bytes_buff, num_of_readed) == -1) return -2;
+	num_of_readed = read(input_descriptor, buffer, bytes_num);
+	if (write(output_decriptor, buffer, num_of_readed) == -1) return -2;
 
 	if (num_of_readed == -1) return -2;
 	return 0;
