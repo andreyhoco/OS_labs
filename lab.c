@@ -5,14 +5,13 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
-
-#define INPUT_MAX 2048
+#include "term_utils.h"
 
 int main() {
 	pid_t child_pid;
-	pid_t completed_child_pid;
 	char input[INPUT_MAX];
 	char dir[PATH_MAX];
+	char path[PATH_MAX];
 	char** arguments = calloc(INPUT_MAX + 1, sizeof(char*));
 	int prev_count = 0;
 
@@ -26,6 +25,7 @@ int main() {
 	printf("Current dir: %s\n", dir);
 
 	while (1) {
+		printf("Start\n");
 		if ((fgets(input, INPUT_MAX, stdin) == NULL) && (ferror(stdin) != 0)) {
 			perror(NULL);
 			continue;
@@ -37,6 +37,32 @@ int main() {
 
 		int count = 1;
 		char* token = strtok(input, " ");
+
+		// Handle cd command
+		if ((strcmp(token, "cd") == 0) || (strcmp(token, "cd\n") == 0)) {
+			printf("Start cd\n");
+			if (strlen(token) == 2) {
+				token = strtok(NULL, " ");
+				strncpy(path, token , strlen(token));
+				if (strchr(token, '\n') != NULL) path[strlen(token) - 1] = '\0';
+				else path[strlen(token)] = '\0';
+			} else {
+				strncpy(path, "~", strlen("~"));
+				path[strlen("~")] = '\0';
+			}
+			if (come_dir(path) == -1) perror(path);
+			else {
+				getcwd(dir, PATH_MAX);
+				printf("Current dir: %s\n", dir);
+			}
+
+			for (int i = 0; i < prev_count; i ++) {
+				free(arguments[i]);
+				arguments[i] = NULL;
+			}
+			prev_count = 0;
+			continue;
+		}
 
 		if (strchr(token, '\n') != NULL) {
 			if ((arguments[0] = realloc(arguments[0], strlen(token) * sizeof(char))) == NULL) {
@@ -91,7 +117,8 @@ int main() {
 		int delta = prev_count - count;
 		if (delta > 0) {
 			for (int i = 1; i < delta + 1; i ++) {
-				free(arguments[count + delta]);
+				free(arguments[count + i]);
+				arguments[count + i] = NULL;
 			}
 		}
 		prev_count = count;
@@ -105,6 +132,13 @@ int main() {
 			case 0: {
 				if (execvp(arguments[0], arguments) == -1) {
 					perror(arguments[0]);
+
+					for (int i = 0; i <= count; i ++) {
+						free(arguments[i]);
+						arguments[i] = NULL;
+					}
+					free(arguments);
+
 					exit(-1);
 				}
 				break;
