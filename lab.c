@@ -8,10 +8,9 @@
 
 #define INPUT_MAX 2048
 
-int is_stream_empty(FILE* stream);
-
 int main() {
 	pid_t child_pid;
+	pid_t completed_child_pid;
 	char input[INPUT_MAX];
 	char dir[PATH_MAX];
 	char** arguments = calloc(INPUT_MAX + 1, sizeof(char*));
@@ -79,7 +78,14 @@ int main() {
 			}
 		}
 
-		arguments[count] = realloc(arguments[count], sizeof(char));
+		int is_background = 0;
+		if ((count > 1) && (strcmp(arguments[count - 1], "&") == 0)) {
+			is_background = 1;
+			count --;
+		} else {
+			arguments[count] = realloc(arguments[count], sizeof(char));
+			is_background = 0;
+		}
 		arguments[count] = 0;
 
 		int delta = prev_count - count;
@@ -97,11 +103,14 @@ int main() {
 				break;
 			}
 			case 0: {
-				execvp(arguments[0], arguments);
+				if (execvp(arguments[0], arguments) == -1) {
+					perror(arguments[0]);
+					exit(-1);
+				}
 				break;
 			}
 			default: {
-				if ((count > 1) && (strcmp(arguments[count - 1], "&") == 0)) break;
+				if (is_background) break;
 				waitpid(child_pid, NULL, 0);
 				break;
 			}
@@ -109,17 +118,4 @@ int main() {
 	}
 
 	exit(0);
-}
-
-int is_stream_empty(FILE* stream) {
-	printf("Check stream");
-	char test;
-	if ((test = getchar()) == EOF) {
-		printf("Empty stream|");
-		printf("Test = %c|", test);	
-		return 1;
-	}
-	else ungetc(test, stream);
-	printf("Test = %c|", test);
-	return 0;
 }
