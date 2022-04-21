@@ -3,33 +3,41 @@
 #include <linux/limits.h>
 #include <sys/wait.h>
 #include <string.h>
-#include <stdio.h>
 #include <stdlib.h>
+#include <errno.h>
 #include "term_utils.h"
+#include "error_handling.h"
 
 int main() {
 	pid_t child_pid;
-	char input[INPUT_MAX];
+	char input[INPUT_MAX + 1];
 	char dir[PATH_MAX];
 	char path[PATH_MAX];
-	char** arguments = calloc(INPUT_MAX + 1, sizeof(char*));
+	char inv[PATH_MAX + 2];
+	char** arguments = calloc(INPUT_MAX / 2 + 1, sizeof(char*));
 	int prev_count = 0;
 
 	if (arguments == NULL) {
-		perror(NULL);
+		print_error(errno, "input buffer");
 		exit(-1);
 	}
 	getcwd(dir, PATH_MAX);
-
-	printf("Welcome to custom terminal\n");
-	printf("Current dir: %s\n", dir);
+	write(1, "Welcome to custom terminal\n\0", strlen("Welcome to custom terminal\n\0") + 1);
 
 	while (1) {
-		printf("Start\n");
-		if ((fgets(input, INPUT_MAX, stdin) == NULL) && (ferror(stdin) != 0)) {
-			perror(NULL);
+		int num_of_readed;
+
+		strncpy(inv, dir, strlen(dir));
+		inv[strlen(dir)] = '\0';
+		strncat(inv, ">\0", strlen(dir) + 2);
+		write(1, inv, strlen(inv) + 1);
+
+		if ((num_of_readed = read(STDIN_FILENO, input, INPUT_MAX)) == -1) {
+			print_error(errno, "stdin");
 			continue;
 		}
+
+		input[num_of_readed] = '\0';
 
 		if (strcmp(input, "\n\0") == 0) {
 			continue;
@@ -40,7 +48,6 @@ int main() {
 
 		// Handle cd command
 		if ((strcmp(token, "cd") == 0) || (strcmp(token, "cd\n") == 0)) {
-			printf("Start cd\n");
 			if (strlen(token) == 2) {
 				token = strtok(NULL, " ");
 				strncpy(path, token , strlen(token));
@@ -50,10 +57,9 @@ int main() {
 				strncpy(path, "~", strlen("~"));
 				path[strlen("~")] = '\0';
 			}
-			if (come_dir(path) == -1) perror(path);
+			if (come_dir(path) == -1) print_error(errno, path);
 			else {
 				getcwd(dir, PATH_MAX);
-				printf("Current dir: %s\n", dir);
 			}
 
 			for (int i = 0; i < prev_count; i ++) {
@@ -66,14 +72,14 @@ int main() {
 
 		if (strchr(token, '\n') != NULL) {
 			if ((arguments[0] = realloc(arguments[0], strlen(token) * sizeof(char))) == NULL) {
-				perror(NULL);
+				print_error(errno, "arguments");
 				continue;
 			}
 			strncpy(arguments[0], token, strlen(token) - 1);
 			arguments[0][strlen(token) - 1] = '\0';
 		} else {
 			if ((arguments[0] = realloc(arguments[0], (strlen(token) + 1) * sizeof(char))) == NULL) {
-				perror(NULL);
+				print_error(errno, "arguments");
 				continue;
 			}
 
@@ -85,7 +91,7 @@ int main() {
 			if ((strcmp(token, "") != 0) && (strcmp(token, "\n\0") != 0)) {
 				if (strchr(token, '\n') != NULL) {
 					if ((arguments[count] = realloc(arguments[count], strlen(token) * sizeof(char))) == NULL) {
-						perror(NULL);
+						print_error(errno, "arguments");
 						continue;
 					}
 
@@ -93,7 +99,7 @@ int main() {
 					arguments[count][strlen(token) - 1] = '\0';
 				} else {
 					if ((arguments[count] = realloc(arguments[count], (strlen(token) + 1) * sizeof(char))) == NULL) {
-						perror(NULL);
+						print_error(errno, "arguments");
 						continue;
 					}
 
@@ -126,12 +132,12 @@ int main() {
 		child_pid = fork();
 		switch (child_pid) {
 			case -1: {
-				perror(NULL);
+				print_error(errno, "child process");
 				break;
 			}
 			case 0: {
 				if (execvp(arguments[0], arguments) == -1) {
-					perror(arguments[0]);
+					print_error(errno, arguments[0]);
 
 					for (int i = 0; i <= count; i ++) {
 						free(arguments[i]);
