@@ -2,8 +2,7 @@
 #include <sys/types.h>
 #include <stdlib.h>
 #include <string.h>
-
-#define INPUT_MAX 2048
+#include "utils.h"
 
 int main(int argc, char* argv[]) {
 	int opt;
@@ -51,8 +50,16 @@ int main(int argc, char* argv[]) {
 		exit(-1);
 	}
 
+	char **input_args = calloc(INPUT_MAX / 2 + 1, sizeof(char*));
+	char **key_args = calloc(INPUT_MAX / 2 + 1, sizeof(char*));
+
 	write(1, input_data, strlen(input_data) + 1);
+	write(1, "\n\0", 2);
 	write(1, key_data, strlen(key_data) + 1);
+	write(1, "\n\0", 2);
+
+	int input_args_count = parse(input_args, input_data);
+	int key_args_count = parse(key_args, key_data);
 
 	exit(0);
 }
