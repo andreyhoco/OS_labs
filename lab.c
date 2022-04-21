@@ -7,8 +7,8 @@
 
 int main(int argc, char* argv[]) {
 	int opt;
-	char input_data[INPUT_MAX];
-	char key_data[INPUT_MAX];
+	char input_data[INPUT_MAX + 1];
+	char key_data[INPUT_MAX + 1];
 
 	memset(input_data, '\0', INPUT_MAX);
 	memset(key_data, '\0', INPUT_MAX);
@@ -22,7 +22,8 @@ int main(int argc, char* argv[]) {
 				}
 				
 				strncpy(input_data, optarg, INPUT_MAX);
-				input_data[strlen(optarg)] = '\0';
+				int null_pos = MIN_INT(strlen(optarg), INPUT_MAX);
+				input_data[null_pos] = '\0';
 				break;
 			}
 
@@ -33,7 +34,8 @@ int main(int argc, char* argv[]) {
 				}
 
 				strncpy(key_data, optarg, INPUT_MAX);
-				key_data[strlen(optarg)] = '\0';
+				int null_pos = MIN_INT(strlen(optarg), INPUT_MAX);
+				key_data[null_pos] = '\0';
 				break;
 			}
 		}
