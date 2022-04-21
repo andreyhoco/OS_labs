@@ -2,6 +2,8 @@
 #include <sys/types.h>
 #include <stdlib.h>
 #include <string.h>
+#include <errno.h>
+#include "error_handling.h"
 #include "utils.h"
 
 int main(int argc, char* argv[]) {
@@ -58,8 +60,17 @@ int main(int argc, char* argv[]) {
 	write(1, key_data, strlen(key_data) + 1);
 	write(1, "\n\0", 2);
 
-	int input_args_count = parse(input_args, input_data);
-	int key_args_count = parse(key_args, key_data);
+	int input_args_count;
+	int key_args_count;
+
+	if ((input_args_count = parse(input_args, input_data)) == -1) {
+		print_error(errno, "input");
+		exit(-1);
+	}
+	if ((key_args_count = parse(key_args, key_data)) == -1) {
+		print_error(errno, "key");
+		exit(-1);	
+	}
 
 	exit(0);
 }
