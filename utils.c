@@ -47,7 +47,12 @@ int parse(char **arguments, char *input) {
 		for (int i = 0; i < count; i ++) free(arguments[i]);
 		return -1;
 	}
-	
+
 	arguments[count] = 0;
 	return count;
+}
+
+void free_args(char **args, int args_count) {
+	for (int i = 0; i <= args_count; i ++) free(args[i]);
+	free(args);
 }
