@@ -2,6 +2,7 @@
 #include <sys/types.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdio.h>
 #include <errno.h>
 #include "error_handling.h"
 #include "utils.h"
@@ -55,11 +56,6 @@ int main(int argc, char* argv[]) {
 	char **input_args = calloc(INPUT_MAX / 2 + 1, sizeof(char*));
 	char **key_args = calloc(INPUT_MAX / 2 + 1, sizeof(char*));
 
-	write(1, input_data, strlen(input_data) + 1);
-	write(1, "\n\0", 2);
-	write(1, key_data, strlen(key_data) + 1);
-	write(1, "\n\0", 2);
-
 	int input_args_count;
 	int key_args_count;
 
@@ -70,6 +66,97 @@ int main(int argc, char* argv[]) {
 	if ((key_args_count = parse(key_args, key_data)) == -1) {
 		print_error(errno, "key");
 		exit(-1);	
+	}
+
+	int input_pipes[2];
+	if (pipe(input_pipes) == -1) {
+		print_error(errno, "input pipes");
+		free_args(input_args, input_args_count);
+		free_args(key_args, key_args_count);
+		exit(-1);
+	}
+
+	pid_t input_fork = fork();
+	switch(input_fork) {
+		case -1: {
+			free_args(input_args, input_args_count);
+			free_args(key_args, key_args_count);
+			print_error(errno, "input fork");
+			exit(-1);
+		}
+		case 0: {
+			dup2(input_pipes[1], 1);
+			close(input_pipes[0]);
+			close(input_pipes[1]);
+
+			if (errno != 0) {
+				print_error(errno, "input stdin");
+				free_args(input_args, input_args_count);
+				free_args(key_args, key_args_count);
+				exit(-1);
+			}
+
+			if (execvp(input_args[0], input_args) == -1) {
+				print_error(errno, input_args[0]);
+				free_args(input_args, input_args_count);
+				free_args(key_args, key_args_count);
+				exit(-1);
+			}
+			break;
+		}
+	}
+
+	free_args(input_args, input_args_count);
+	if (close(input_pipes[1]) == -1) {
+		print_error(errno, "input stdin");
+		free_args(key_args, key_args_count);
+		exit(-1);
+	}
+
+	int key_pipes[2];
+	if (pipe(key_pipes) == -1) {
+		print_error(errno, "key pipes");
+		free_args(key_args, key_args_count);
+		exit(-1);
+	}
+
+	pid_t key_fork = fork();
+	switch(key_fork) {
+		case -1: {
+			free_args(key_args, key_args_count);
+			print_error(errno, "key fork");
+			exit(-1);
+		}
+		case 0: {
+			dup2(key_pipes[1], 1);
+			close(key_pipes[0]);
+			close(key_pipes[1]);
+
+			if (errno != 0) {
+				print_error(errno, "key stdin");
+				free_args(key_args, key_args_count);
+				exit(-1);
+			}
+
+			if (execvp(key_args[0], key_args) == -1) {
+				print_error(errno, key_args[0]);
+				free_args(key_args, key_args_count);
+				exit(-1);
+			}
+			break;
+		}
+	}
+	free_args(key_args, key_args_count);
+	if (close(key_pipes[1]) == -1) {
+		print_error(errno, "key stdin");
+	}
+
+	char buff[50];
+	while (read(input_pipes[0], &buff, sizeof(buff)) > 0) {
+		printf("input: %s\n", buff);
+	}
+	while (read(key_pipes[0], &buff, sizeof(buff)) > 0) {
+		printf("key: %s\n", buff);
 	}
 
 	exit(0);
