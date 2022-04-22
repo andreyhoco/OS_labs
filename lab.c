@@ -1,5 +1,7 @@
 #include <unistd.h>
+#include <fcntl.h>
 #include <sys/types.h>
+#include <sys/stat.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
@@ -11,7 +13,9 @@ int main(int argc, char* argv[]) {
 	int opt;
 	char input_data[INPUT_MAX + 1];
 	char key_data[INPUT_MAX + 1];
+	char output_file[INPUT_MAX];
 
+	strncpy(output_file, "encrypted_data", sizeof("encrypted_data"));
 	memset(input_data, '\0', INPUT_MAX);
 	memset(key_data, '\0', INPUT_MAX);
 
@@ -84,6 +88,7 @@ int main(int argc, char* argv[]) {
 			print_error(errno, "input fork");
 			exit(-1);
 		}
+
 		case 0: {
 			dup2(input_pipes[1], 1);
 			close(input_pipes[0]);
@@ -127,6 +132,7 @@ int main(int argc, char* argv[]) {
 			print_error(errno, "key fork");
 			exit(-1);
 		}
+
 		case 0: {
 			dup2(key_pipes[1], 1);
 			close(key_pipes[0]);
@@ -151,13 +157,43 @@ int main(int argc, char* argv[]) {
 		print_error(errno, key_data);
 	}
 
-	char buff[50];
-	while (read(input_pipes[0], &buff, sizeof(buff)) > 0) {
-		printf("input: %s\n", buff);
+	int output;
+	if ((output = open(output_file, O_WRONLY | O_CREAT, 0664)) == -1) {
+		print_error(errno, output_file);
+		exit(-1);
 	}
-	while (read(key_pipes[0], &buff, sizeof(buff)) > 0) {
-		printf("key: %s\n", buff);
+
+	int res = encrypt_data(input_pipes[0], key_pipes[0], output);
+	switch (res) {
+		case -1: {
+			print_error(errno, "input pipe");
+			close(output);
+			close(input_pipes[0]);
+			close(key_pipes[0]);
+			exit(-1);
+		}
+
+		case -2: {
+			print_error(errno, "key pipe");
+			close(output);
+			close(input_pipes[0]);
+			close(key_pipes[0]);
+			exit(-1);
+		}
+
+		case -3: {
+			print_error(errno, output_file);
+			close(output);
+			close(input_pipes[0]);
+			close(key_pipes[0]);
+			exit(-1);
+		}
 	}
+
+	close(output);
+	close(input_pipes[0]);
+	close(key_pipes[0]);
+
 
 	exit(0);
 }
