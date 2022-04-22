@@ -1,18 +1,26 @@
 #include <stdlib.h>
 #include <string.h>
 
-int parse(char **arguments, char *input) {
+#define INPUT_MAX 2048
+
+int parse(char **arguments, char *input_command) {
+	int input_len = strchr(input_command, '\0') == NULL ? strlen(input_command) : strlen(input_command) + 1;
+	char *input = malloc(input_len * sizeof(char));
+	strncpy(input, input_command, input_len);
+
 	int count = 1;
 	char* token = strtok(input, " ");
 
 	if (strchr(token, '\n') != NULL) {
 		if ((arguments[0] = realloc(arguments[0], strlen(token) * sizeof(char))) == NULL) {
+			free(input);
 			return -1;
 		}
 		strncpy(arguments[0], token, strlen(token) - 1);
 		arguments[0][strlen(token) - 1] = '\0';
 	} else {
 		if ((arguments[0] = realloc(arguments[0], (strlen(token) + 1) * sizeof(char))) == NULL) {
+			free(input);
 			return -1;
 		}
 
@@ -25,6 +33,7 @@ int parse(char **arguments, char *input) {
 			if (strchr(token, '\n') != NULL) {
 				if ((arguments[count] = realloc(arguments[count], strlen(token) * sizeof(char))) == NULL) {
 					for (int i = 0; i < count; i ++) free(arguments[i]);
+					free(input);
 					return -1;
 				}
 
@@ -33,6 +42,7 @@ int parse(char **arguments, char *input) {
 			} else {
 				if ((arguments[count] = realloc(arguments[count], (strlen(token) + 1) * sizeof(char))) == NULL) {
 					for (int i = 0; i < count; i ++) free(arguments[i]);
+					free(input);
 					return -1;
 				}
 
@@ -43,7 +53,9 @@ int parse(char **arguments, char *input) {
 		}
 	}
 
-	if ((arguments[count] = realloc(arguments[count], sizeof(char))) == NULL) {
+	free(input);
+
+	if ((arguments[count] = malloc(sizeof(char))) == NULL) {
 		for (int i = 0; i < count; i ++) free(arguments[i]);
 		return -1;
 	}
