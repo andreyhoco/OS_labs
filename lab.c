@@ -19,10 +19,10 @@ int main(int argc, char* argv[]) {
 	memset(input_data, '\0', INPUT_MAX);
 	memset(key_data, '\0', INPUT_MAX);
 
-	while((opt = getopt(argc, argv, "d:k:")) != -1) {
+	while((opt = getopt(argc, argv, "d:k:o:g")) != -1) {
 		switch(opt) {
 			case 'd': {
-				if (strcmp(optarg, "-k") == 0) {
+				if ((strcmp(optarg, "-k") == 0) || (strcmp(optarg, "-o") == 0)) {
 					write(2, "-d: arg expected\n\0", strlen("-d: arg expected\n\0") + 1);
 					exit(-1);
 				}
@@ -34,7 +34,7 @@ int main(int argc, char* argv[]) {
 			}
 
 			case 'k': {
-				if (strcmp(optarg, "-d") == 0) {
+				if ((strcmp(optarg, "-d") == 0) || (strcmp(optarg, "-o") == 0)) {
 					write(2, "-k: arg expected\n\0", strlen("-k: arg expected\n\0") + 1);
 					exit(-1);
 				}
@@ -42,6 +42,16 @@ int main(int argc, char* argv[]) {
 				strncpy(key_data, optarg, INPUT_MAX);
 				int null_pos = MIN_INT(strlen(optarg), INPUT_MAX);
 				key_data[null_pos] = '\0';
+				break;
+			}
+
+			case 'o': {
+				if ((strcmp(optarg, "-d") == 0) || (strcmp(optarg, "-k") == 0)){
+					write(2, "-o: arg expected\n\0", strlen("-o: arg expected\n\0") + 1);
+					exit(-1);
+				}
+
+				strncpy(output_file, optarg, INPUT_MAX);
 				break;
 			}
 		}
