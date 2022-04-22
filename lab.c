@@ -60,11 +60,11 @@ int main(int argc, char* argv[]) {
 	int key_args_count;
 
 	if ((input_args_count = parse(input_args, input_data)) == -1) {
-		print_error(errno, "input");
+		print_error(errno, input_data);
 		exit(-1);
 	}
 	if ((key_args_count = parse(key_args, key_data)) == -1) {
-		print_error(errno, "key");
+		print_error(errno, key_data);
 		exit(-1);	
 	}
 
@@ -90,14 +90,14 @@ int main(int argc, char* argv[]) {
 			close(input_pipes[1]);
 
 			if (errno != 0) {
-				print_error(errno, "input stdin");
+				print_error(errno, input_data);
 				free_args(input_args, input_args_count);
 				free_args(key_args, key_args_count);
 				exit(-1);
 			}
 
 			if (execvp(input_args[0], input_args) == -1) {
-				print_error(errno, input_args[0]);
+				print_error(errno, input_data);
 				free_args(input_args, input_args_count);
 				free_args(key_args, key_args_count);
 				exit(-1);
@@ -108,7 +108,7 @@ int main(int argc, char* argv[]) {
 
 	free_args(input_args, input_args_count);
 	if (close(input_pipes[1]) == -1) {
-		print_error(errno, "input stdin");
+		print_error(errno, input_data);
 		free_args(key_args, key_args_count);
 		exit(-1);
 	}
@@ -133,13 +133,13 @@ int main(int argc, char* argv[]) {
 			close(key_pipes[1]);
 
 			if (errno != 0) {
-				print_error(errno, "key stdin");
+				print_error(errno, key_data);
 				free_args(key_args, key_args_count);
 				exit(-1);
 			}
 
 			if (execvp(key_args[0], key_args) == -1) {
-				print_error(errno, key_args[0]);
+				print_error(errno, key_data);
 				free_args(key_args, key_args_count);
 				exit(-1);
 			}
@@ -148,7 +148,7 @@ int main(int argc, char* argv[]) {
 	}
 	free_args(key_args, key_args_count);
 	if (close(key_pipes[1]) == -1) {
-		print_error(errno, "key stdin");
+		print_error(errno, key_data);
 	}
 
 	char buff[50];
