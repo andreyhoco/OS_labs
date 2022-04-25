@@ -14,7 +14,7 @@ int main() {
 	char dir[PATH_MAX];
 	char path[PATH_MAX];
 	char inv[PATH_MAX + 2];
-	char** arguments = calloc(INPUT_MAX / 2 + 1, sizeof(char*));
+	char** arguments = calloc(INPUT_MAX / 2 + 2, sizeof(char*));
 	int prev_count = 0;
 
 	if (arguments == NULL) {
@@ -43,7 +43,7 @@ int main() {
 			continue;
 		}
 
-		int count = 1;
+		int index = 1;
 		char* token = strtok(input, " ");
 
 		// Handle cd command
@@ -90,44 +90,44 @@ int main() {
 		while ((token = strtok(NULL, " ")) != NULL) {
 			if ((strcmp(token, "") != 0) && (strcmp(token, "\n\0") != 0)) {
 				if (strchr(token, '\n') != NULL) {
-					if ((arguments[count] = realloc(arguments[count], strlen(token) * sizeof(char))) == NULL) {
+					if ((arguments[index] = realloc(arguments[index], strlen(token) * sizeof(char))) == NULL) {
 						print_error(errno, "arguments");
 						continue;
 					}
 
-					strncpy(arguments[count], token, strlen(token) - 1);
-					arguments[count][strlen(token) - 1] = '\0';
+					strncpy(arguments[index], token, strlen(token) - 1);
+					arguments[index][strlen(token) - 1] = '\0';
 				} else {
-					if ((arguments[count] = realloc(arguments[count], (strlen(token) + 1) * sizeof(char))) == NULL) {
+					if ((arguments[index] = realloc(arguments[index], (strlen(token) + 1) * sizeof(char))) == NULL) {
 						print_error(errno, "arguments");
 						continue;
 					}
 
-					strncpy(arguments[count], token, strlen(token));
-					arguments[count][strlen(token)] = '\0';
+					strncpy(arguments[index], token, strlen(token));
+					arguments[index][strlen(token)] = '\0';
 				}
-				count ++;
+				index ++;
 			}
 		}
+
+		index --;
 
 		int is_background = 0;
-		if ((count > 1) && (strcmp(arguments[count - 1], "&") == 0)) {
+		if ((index > 1) && (strcmp(arguments[index], "&") == 0)) {
+			free(arguments[index]);
+			arguments[index] = NULL;
 			is_background = 1;
-			count --;
-		} else {
-			arguments[count] = realloc(arguments[count], sizeof(char));
-			is_background = 0;
+			index --;
 		}
-		arguments[count] = 0;
 
-		int delta = prev_count - count;
+		int delta = prev_count - index;
 		if (delta > 0) {
-			for (int i = 1; i < delta + 1; i ++) {
-				free(arguments[count + i]);
-				arguments[count + i] = NULL;
+			for (int i = 1; i <= delta; i ++) {
+				free(arguments[index + i]);
+				arguments[index + i] = NULL;
 			}
 		}
-		prev_count = count;
+		prev_count = index;
 
 		child_pid = fork();
 		switch (child_pid) {
@@ -139,7 +139,7 @@ int main() {
 				if (execvp(arguments[0], arguments) == -1) {
 					print_error(errno, arguments[0]);
 
-					for (int i = 0; i <= count; i ++) {
+					for (int i = 0; i <= index; i ++) {
 						free(arguments[i]);
 						arguments[i] = NULL;
 					}
