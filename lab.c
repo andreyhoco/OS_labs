@@ -83,8 +83,12 @@ int main(int argc, char* argv[]) {
 		exit(-1);
 	}
 
-	char **input_args = calloc(INPUT_MAX / 2 + 1, sizeof(char*));
-	char **key_args = calloc(INPUT_MAX / 2 + 1, sizeof(char*));
+	/*
+	* INPUT_MAX / 2 + 1 - кол-во аргументов при INPUT_MAX / 2 пробелов в строке
+	* еще + 1 добавляется для того, чтобы массив аргументов оканчивался NULL для использования execvp
+	*/
+	char **input_args = calloc(INPUT_MAX / 2 + 2, sizeof(char*));
+	char **key_args = calloc(INPUT_MAX / 2 + 2, sizeof(char*));
 
 	int input_args_count;
 	int key_args_count;
