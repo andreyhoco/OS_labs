@@ -5,11 +5,20 @@
 #include <string.h>
 #include <stdlib.h>
 #include <errno.h>
+#include <signal.h>
 #include "term_utils.h"
 #include "error_handling.h"
 
+void kill_child(int sig);
+
+pid_t child_pid = -2;
+/*
+* После вызова kill переменную errno может перезаписать другой вызов,
+* поэтому ошибки вызова kill выделена отдельная переменная
+*/
+int kill_err = 0;
+
 int main() {
-	pid_t child_pid;
 	char input[INPUT_MAX + 1];
 	char dir[PATH_MAX];
 	char path[PATH_MAX];
@@ -19,13 +28,32 @@ int main() {
 
 	if (arguments == NULL) {
 		print_error(errno, "input buffer");
+		free(arguments);
 		exit(-1);
 	}
+
+	struct sigaction action;
+	action.sa_handler = kill_child;
+	sigemptyset(&action.sa_mask);
+	action.sa_flags = 0;
+
+	if (sigaction(SIGINT, &action, 0) == -1) {
+		print_error(errno, "signal handler");
+		free(arguments);
+		exit(-1);
+	}
+
 	getcwd(dir, PATH_MAX);
 	write(1, "Welcome to custom terminal\n\0", strlen("Welcome to custom terminal\n\0") + 1);
 
 	while (1) {
 		int num_of_readed;
+
+		if (kill_err != 0) {
+			if (kill_err != ESRCH) print_error(kill_err, "kill child process");
+			kill_err = 0;
+			continue;
+		}
 
 		strncpy(inv, dir, strlen(dir));
 		inv[strlen(dir)] = '\0';
@@ -33,7 +61,10 @@ int main() {
 		write(1, inv, strlen(inv) + 1);
 
 		if ((num_of_readed = read(STDIN_FILENO, input, INPUT_MAX)) == -1) {
-			print_error(errno, "stdin");
+			if (errno == EINTR) write(1, "\n\0", strlen("\n\0") + 1);
+			else print_error(errno, "stdin");
+
+			errno = 0;
 			continue;
 		}
 
@@ -136,6 +167,14 @@ int main() {
 				break;
 			}
 			case 0: {
+				// Чилды должны игнорировать SIGINT
+				action.sa_handler = SIG_IGN;
+				sigemptyset(&action.sa_mask);
+				action.sa_flags = 0;
+				if (sigaction(SIGINT, &action, 0) == -1) {
+					print_error(errno, arguments[0]);
+				}
+
 				if (execvp(arguments[0], arguments) == -1) {
 					print_error(errno, arguments[0]);
 
@@ -150,7 +189,10 @@ int main() {
 				break;
 			}
 			default: {
-				if (is_background) break;
+				if (is_background) {
+					child_pid = -2;
+					break;
+				}
 				waitpid(child_pid, NULL, 0);
 				break;
 			}
@@ -158,4 +200,10 @@ int main() {
 	}
 
 	exit(0);
+}
+
+void kill_child(int sig) {
+	if (child_pid != -2) {
+		if (kill(child_pid, SIGTERM) == -1) kill_err = errno;
+	}
 }
