@@ -1,0 +1,1 @@
+int rgb_to_grayscale(unsigned char*** source, unsigned char** container, int h, int w);
