@@ -4,9 +4,12 @@
 #include <sys/stat.h>
 #include <string.h>
 
+#include <stdio.h>
+
 #define BUFF_SIZE 100
 #define FORMAT_LEN 2
 #define FORMAT_ERR -2
+#define BYTES_PER_PX 3
 
 struct pnm_header{
 	char format[FORMAT_LEN];
@@ -87,7 +90,7 @@ int load_pnm_header(int image_d, struct pnm_header* header) {
 				case 2: {
 					int offset = lseek(image_d, 0, SEEK_CUR);
 					if (offset == -1) return -1;
-					
+
 					int offset_to_rastr = offset - (readed - handled);
 					if (lseek(image_d, offset_to_rastr, SEEK_SET) == -1) return -1;
 					return offset_to_rastr;
@@ -102,4 +105,17 @@ int load_pnm_header(int image_d, struct pnm_header* header) {
 
 	if (readed == -1) return -1;
 	else return FORMAT_ERR;
+}
+
+int load_ppm(int image_d, unsigned char*** container, struct pnm_header* header) {
+	for (int rownum = 0; rownum < header->height; rownum ++) {
+		for (int columnnum = 0; columnnum < header->width; columnnum ++) {
+			int readed = read(image_d, container[rownum][columnnum], BYTES_PER_PX);
+
+			if (readed == -1) return -1;
+			if (readed < BYTES_PER_PX) return FORMAT_ERR;
+		}
+	}
+
+	return 0;
 }
