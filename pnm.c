@@ -4,8 +4,6 @@
 #include <sys/stat.h>
 #include <string.h>
 
-#include <stdio.h>
-
 #define BUFF_SIZE 100
 #define FORMAT_LEN 2
 #define FORMAT_ERR -2
@@ -115,6 +113,16 @@ int load_ppm(int image_d, unsigned char*** container, struct pnm_header* header)
 			if (readed == -1) return -1;
 			if (readed < BYTES_PER_PX) return FORMAT_ERR;
 		}
+	}
+
+	return 0;
+}
+
+int load_pgm(int image_d, unsigned char** container, struct pnm_header* header) {
+	for (int rownum = 0; rownum < header->height; rownum ++) {
+		int readed = read(image_d, container[rownum], header->width);
+		if (readed == -1) return -1;
+		if (readed < BYTES_PER_PX) return FORMAT_ERR;
 	}
 
 	return 0;

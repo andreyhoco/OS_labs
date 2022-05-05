@@ -12,3 +12,5 @@ struct pnm_header {
 int load_pnm_header(int image_d, struct pnm_header* header);
 
 int load_ppm(int image_d, unsigned char*** container, struct pnm_header* header);
+
+int load_pgm(int image_d, unsigned char** container, struct pnm_header* header);
