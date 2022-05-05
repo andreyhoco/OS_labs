@@ -56,8 +56,7 @@ int main() {
 		grayscale_matrix[i] = malloc(sizeof(unsigned char) * header.width);
 
 		if (grayscale_matrix[i] == NULL) {
-			for (int row = 0; row < i; row ++) free(grayscale_matrix[row]);
-			free(grayscale_matrix);
+			free_matrix(grayscale_matrix, i);
 			print_error(errno, image_name);
 			close(image_d);
 			exit(-1);
@@ -69,8 +68,7 @@ int main() {
 		unsigned char*** image_matrix = malloc(sizeof(unsigned char**) * header.height);
 
 		if (image_matrix == NULL) {
-			for (int row = 0; row < header.height; row ++) free(grayscale_matrix[row]);
-			free(grayscale_matrix);
+			free_matrix(grayscale_matrix, header.height);
 
 			print_error(errno, image_name);
 			close(image_d);
@@ -80,8 +78,7 @@ int main() {
 			image_matrix[i] = malloc(sizeof(char*) * header.width);
 
 			if (image_matrix[i] == NULL) {
-				for (int row = 0; row < header.height; row ++) free(grayscale_matrix[row]);
-				free(grayscale_matrix);
+				free_matrix(grayscale_matrix, header.height);
 
 				for (int row = 0; row < i; row ++) {
 					for (int column = 0; column < header.width; column ++) free(image_matrix[row][column]);
@@ -97,8 +94,7 @@ int main() {
 				image_matrix[i][j] = malloc(sizeof(unsigned char) * BYTES_PER_PX);
 
 				if (image_matrix[i][j] == NULL) {
-					for (int row = 0; row < header.height; row ++) free(grayscale_matrix[row]);
-					free(grayscale_matrix);
+					free_matrix(grayscale_matrix, header.height);
 
 					for (int row = 0; row <= i; row ++) {
 						if (row == i) {
@@ -121,8 +117,7 @@ int main() {
 			if (result == FORMAT_ERR) print_format_error(image_name);
 			else print_error(errno, image_name);
 			
-			for (int row = 0; row < header.height; row ++) free(grayscale_matrix[row]);
-			free(grayscale_matrix);
+			free_matrix(grayscale_matrix, header.height);
 
 			for (int row = 0; row < header.height; row ++) {
 				for (int column = 0; column < header.width; column ++) free(image_matrix[row][column]);
@@ -147,8 +142,7 @@ int main() {
 			if (result == FORMAT_ERR) print_format_error(image_name);
 			else print_error(errno, image_name);
 
-			for (int row = 0; row < header.height; row ++) free(grayscale_matrix[row]);
-			free(grayscale_matrix);
+			free_matrix(grayscale_matrix, header.height);
 			close(image_d);
 			exit(-1);
 		}
@@ -159,8 +153,7 @@ int main() {
 	unsigned char** sobel_matrix = malloc(sizeof(unsigned char*) * header.height);
 
 	if (sobel_matrix == NULL) {
-		for (int row = 0; row < header.height; row ++) free(grayscale_matrix[row]);
-		free(grayscale_matrix);
+		free_matrix(grayscale_matrix, header.height);
 
 		print_error(errno, "sobel matrix");
 		close(image_d);
@@ -171,11 +164,8 @@ int main() {
 		sobel_matrix[i] = malloc(header.width * sizeof(unsigned char));
 
 		if (sobel_matrix[i] == NULL) {
-			for (int row = 0; row < i; row ++) free(sobel_matrix[row]);
-			free(sobel_matrix);
-
-			for (int row = 0; row < header.height; row ++) free(grayscale_matrix[row]);
-			free(grayscale_matrix);
+			free_matrix(sobel_matrix, i);
+			free_matrix(grayscale_matrix, header.height);
 			
 			print_error(errno, "sobel matrix");
 			exit(-1);
@@ -183,21 +173,11 @@ int main() {
 	}
 
 	apply_sopel_op(grayscale_matrix, sobel_matrix, 1, 1, header.width - 2, header.height - 2);
-
-	unsigned char max = 0;
-	for (int i = 0; i < header.height; i ++) {
-		for (int j = 0; j < header.width; j ++) {
-			if (sobel_matrix[i][j] > max) max = sobel_matrix[i][j];
-		}
-	}
+	free_matrix(grayscale_matrix, header.height);
 
 	int out = open(out_name, O_WRONLY | O_CREAT, 0664);
 	if (out == -1) {
-		for (int row = 0; row < header.height; row ++) free(sobel_matrix[row]);
-		free(sobel_matrix);
-
-		for (int row = 0; row < header.height; row ++) free(grayscale_matrix[row]);
-		free(grayscale_matrix);
+		free_matrix(sobel_matrix, header.height);
 
 		print_error(errno, out_name);
 		close(image_d);
@@ -222,6 +202,7 @@ int main() {
 		write(out, sobel_matrix[i], header.width);
 	}
 
+	free_matrix(sobel_matrix, header.height);
 	close(out);
 	close(image_d);
 

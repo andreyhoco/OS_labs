@@ -1,3 +1,5 @@
+#include <stdlib.h>
+
 #define INT_64_LEN 20
 
 int int_to_str(int number, char* str_num) {
@@ -14,5 +16,11 @@ int int_to_str(int number, char* str_num) {
 	i --;
 	for (int j = 0; i >= 0; i --, j ++) str_num[j] = buff[i];
 
+	return 0;
+}
+
+int free_matrix(unsigned char** matrix, int len) {
+	for (int row = 0; row < len; row ++) free(matrix[row]);
+	free(matrix);
 	return 0;
 }
