@@ -48,7 +48,7 @@ int main() {
 	unsigned char** grayscale_matrix = malloc(sizeof(unsigned char*) * header.height);
 
 	if (grayscale_matrix == NULL) {
-		print_error(errno, image_name);
+		print_error(errno, "grayscale_matrix");
 		close(image_d);
 		exit(-1);
 	}
@@ -57,7 +57,7 @@ int main() {
 
 		if (grayscale_matrix[i] == NULL) {
 			free_matrix(grayscale_matrix, i);
-			print_error(errno, image_name);
+			print_error(errno, "grayscale_matrix");
 			close(image_d);
 			exit(-1);
 		}
@@ -70,7 +70,7 @@ int main() {
 		if (image_matrix == NULL) {
 			free_matrix(grayscale_matrix, header.height);
 
-			print_error(errno, image_name);
+			print_error(errno, "rgb matrix");
 			close(image_d);
 			exit(-1);
 		}
@@ -85,7 +85,7 @@ int main() {
 					free(image_matrix[row]);
 				}
 				free(image_matrix);
-				print_error(errno, image_name);
+				print_error(errno, "rgb matrix");
 				close(image_d);
 				exit(-1);
 			}
@@ -105,7 +105,7 @@ int main() {
 						free(image_matrix[row]);
 					}
 					free(image_matrix);
-					print_error(errno, image_name);
+					print_error(errno, "rgb matrix");
 					close(image_d);
 					exit(-1);
 				}
@@ -173,6 +173,13 @@ int main() {
 	}
 
 	apply_sopel_op(grayscale_matrix, sobel_matrix, 1, 1, header.width - 2, header.height - 2);
+
+	struct pnm_header sobel_header;
+	strncpy(sobel_header.format, "P5", FORMAT_LEN);
+	sobel_header.width = header.width;
+	sobel_header.height = header.height;
+	sobel_header.color_depth = header.color_depth;
+
 	free_matrix(grayscale_matrix, header.height);
 
 	int out = open(out_name, O_WRONLY | O_CREAT, 0664);
@@ -184,27 +191,23 @@ int main() {
 		exit(-1);
 	}
 
-	write(out, "P5\n", strlen("P5\n"));
-	char w[INT_64_LEN];
-	char h[INT_64_LEN];
-	char d[INT_64_LEN];
-	int_to_str(header.height, h);
-	int_to_str(header.width, w);
-	int_to_str(header.color_depth, d);
-	write(out, w, strlen(w));
-	write(out, " ", 1);
-	write(out, h, strlen(h));
-	write(out, "\n", 1);
-	write(out, d, strlen(d));
-	write(out, "\n", 1);
-
-	for (int i = 0; i < header.height; i ++) {
-		write(out, sobel_matrix[i], header.width);
-	}
+	int result = write_pgm_in_file(out, sobel_matrix, &sobel_header);
 
 	free_matrix(sobel_matrix, header.height);
 	close(out);
 	close(image_d);
+
+	switch (result) {
+		case -1: {
+			print_error(errno, out_name);
+			exit(-1);
+		}
+
+		case FORMAT_ERR: {
+			print_format_error("image format");
+			exit(-1);
+		}
+	}
 
 	exit(0);
 }

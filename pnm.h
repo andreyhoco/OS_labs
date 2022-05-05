@@ -14,3 +14,5 @@ int load_pnm_header(int image_d, struct pnm_header* header);
 int load_ppm(int image_d, unsigned char*** container, struct pnm_header* header);
 
 int load_pgm(int image_d, unsigned char** container, struct pnm_header* header);
+
+int write_pgm_in_file(int file_d, unsigned char** image_matrix, struct pnm_header* header);
