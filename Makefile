@@ -5,7 +5,7 @@ SANITIZE_FALGS = -fsanitize=address -fsanitize=leak
 SOURCES = lab.c filters.c pnm.c error_handling.c utils.c
 
 build: main.o filters.o pnm.o error_handling.o utils.o
-	gcc -o main main.o filters.o pnm.o error_handling.o utils.o -lm
+	gcc -D_REENTRANT -o main main.o filters.o pnm.o error_handling.o utils.o -lm -lpthread
 	
 main.o: lab.c filters.h pnm.h error_handling.h utils.h
 	gcc -c -o main.o lab.c
