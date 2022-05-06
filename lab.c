@@ -13,12 +13,14 @@
 #include "error_handling.h"
 #include "utils.h"
 
-int main() {
+int main(int argc, char* argv[]) {
 	char image_name[PATH_MAX];
 	char time_name[PATH_MAX];
 	char out_name[PATH_MAX];
 	int threads_num = 4;
 	int image_d;
+	int opt;
+	int is_tracking = 0;
 
 	memset(image_name, '\0', PATH_MAX);
 	memset(time_name, '\0', PATH_MAX);
@@ -26,6 +28,60 @@ int main() {
 	strncpy(image_name, "mauer.ppm", strlen("mauer.ppm"));
 	strncpy(time_name, "time", strlen("time"));
 	strncpy(out_name, "sobel.pbm", strlen("sobel.pbm"));
+
+	while((opt = getopt(argc, argv, "i:o:j:t")) != -1) {
+		switch(opt) {
+			case 'i': {
+				if (strcmp(optarg, "-o") == 0 || strcmp(optarg, "-j") == 0 || strcmp(optarg, "-t") == 0) {
+					write(2, "-i: arg expected\n\0", strlen("-i: arg expected\n\0") + 1);
+					exit(-1);
+				}
+				
+				strncpy(image_name, optarg, PATH_MAX);
+				break;
+			}
+
+			case 'o': {
+				if (strcmp(optarg, "-i") == 0 || strcmp(optarg, "-j") == 0 || strcmp(optarg, "-t") == 0) {
+					write(2, "-o: arg expected\n\0", strlen("-o: arg expected\n\0") + 1);
+					exit(-1);
+				}
+				
+				strncpy(out_name, optarg, PATH_MAX);
+				break;
+			}
+
+			case 'j': {
+				if (strcmp(optarg, "-i") == 0 || strcmp(optarg, "-o") == 0 || strcmp(optarg, "-t") == 0) {
+					write(2, "-j: arg expected\n\0", strlen("-j: arg expected\n\0") + 1);
+					exit(-1);
+				}
+				
+				int number = 0;
+				for (int i = 0; i < strlen(optarg); i ++) {
+					number = number * 10 + (optarg[i] - '0');
+				}
+				
+				threads_num = number;
+				break;
+			}
+
+			case 't': {
+				is_tracking = 1;
+				break;
+			}
+
+			case '?': {
+				write(2, "Bad options\n\0", strlen("Bad options\n\0") + 1);
+				exit(-1);
+			}
+		}
+	}
+
+	if (argc == 1) {
+		write(2, "Options expected\n\0", strlen("Options expected\n\0") + 1);
+		exit(-1);
+	}
 
 	image_d = open(image_name, O_RDONLY);
 	if (image_d == -1) {
@@ -320,19 +376,21 @@ int main() {
 		}
 	}
 
-	int time_d = open(time_name, O_WRONLY | O_CREAT | O_APPEND, 0664);
-	if (time_d == -1) {
-		print_error(errno, time_name);
-		write(1, "processing time: ", strlen("processing time: "));
-		write(1, str_time, strlen(str_time));
-	} else {
-		if (write(time_d, str_time, strlen(str_time)) == -1) {
+	if (is_tracking) {
+		int time_d = open(time_name, O_WRONLY | O_CREAT | O_APPEND, 0664);
+		if (time_d == -1) {
 			print_error(errno, time_name);
 			write(1, "processing time: ", strlen("processing time: "));
 			write(1, str_time, strlen(str_time));
+		} else {
+			if (write(time_d, str_time, strlen(str_time)) == -1) {
+				print_error(errno, time_name);
+				write(1, "processing time: ", strlen("processing time: "));
+				write(1, str_time, strlen(str_time));
+			}
+			write(time_d, "\n", strlen("\n"));
+			close(time_d);
 		}
-		write(time_d, "\n", strlen("\n"));
-		close(time_d);
 	}
 
 	exit(0);
