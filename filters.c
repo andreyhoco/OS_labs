@@ -1,9 +1,19 @@
 #include <stdlib.h>
 #include <math.h>
+#include <pthread.h>
 
 #define R_COMPRESSION 0.297
 #define G_COMPRESSION 0.585
 #define B_COMPRESSION 0.11
+
+struct sobel_params {
+	unsigned char** source;
+	unsigned char** dest;
+	int from_x;
+	int from_y;
+	int to_x;
+	int to_y;
+};
 
 int rgb_to_grayscale(char*** source, unsigned char** container, int h, int w) {
 	for (int rownum = 0; rownum < h; rownum ++) {
@@ -19,7 +29,7 @@ int rgb_to_grayscale(char*** source, unsigned char** container, int h, int w) {
 	return 0;
 }
 
-int apply_sopel_op(unsigned char** source, unsigned char** container, int from_x, int from_y, int to_x, int to_y) {
+int apply_sobel_op(unsigned char** source, unsigned char** container, int from_x, int from_y, int to_x, int to_y) {
 	for (int row = from_y; row <= to_y; row ++) {
 		for (int column = from_x; column <= to_x; column ++) {
 			int gx = (source[row + 1][column - 1] + 2 * source[row + 1][column] + source[row + 1][column + 1]) -
@@ -34,4 +44,10 @@ int apply_sopel_op(unsigned char** source, unsigned char** container, int from_x
 		}
 	}
 	return 0;
+}
+
+void* concurency_sobel(void* params) {
+	struct sobel_params* curr_params = (struct sobel_params*) params;
+	apply_sobel_op(curr_params->source, curr_params->dest, curr_params->from_x, curr_params->from_y, curr_params->to_x, curr_params->to_y);
+	pthread_exit(NULL);
 }
