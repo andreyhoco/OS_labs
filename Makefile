@@ -23,7 +23,7 @@ utils.o: utils.c
 	gcc -c utils.c
 
 sanitize_build: main.o filters.o pnm.o error_handling.o utils.o
-	gcc -o main $(SANITIZE_FLAGS) main.o filters.o pnm.o error_handling.o utils.o -lm
+	gcc -o main $(SANITIZE_FLAGS) main.o filters.o pnm.o error_handling.o utils.o -lm -lpthread
 	
 check:
 	cppcheck --enable=all $(SOURCES)
