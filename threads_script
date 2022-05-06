@@ -1,0 +1,8 @@
+#!/bin/sh
+
+rm time
+for num in 1 2 4 8 12 16 20 24 32 48 64 96 128 
+do
+	./main -i wall.ppm -o wall_$num.pgm -j $num -t
+done
+exit 0
