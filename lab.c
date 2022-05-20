@@ -292,7 +292,8 @@ int main(int argc, char* argv[]) {
 		parameters[i]->to_y = i != (threads_num - 1) ? header.height / threads_num * (i + 1) : header.height - 2;
 	}
 
-	int start = clock();
+	struct timespec start, end;
+	clock_gettime(CLOCK_REALTIME, &start);
 
 	for (int i = 0; i < threads_num; i ++) {
 		if (pthread_create(threads[i], NULL, concurency_sobel, parameters[i]) != 0) {
@@ -329,7 +330,7 @@ int main(int argc, char* argv[]) {
 		}
 	}
 
-	int end = clock();
+	clock_gettime(CLOCK_REALTIME, &end);
 	free_matrix(grayscale_matrix, header.height);
 	for (int k = 0; k < threads_num; k ++) {
 		free(threads[k]);
@@ -338,9 +339,9 @@ int main(int argc, char* argv[]) {
 	free(threads);
 	free(parameters);
 
-	double time = ((double)(end - start) / CLOCKS_PER_SEC);
+	double time = (end.tv_sec - start.tv_sec) + (end.tv_nsec - start.tv_nsec) * 1e-9;
 	char str_time[INT_64_LEN + 2];
-	double_to_str(str_time, time, 5);
+	double_to_str(str_time, time, 9);
 
 	struct pnm_header sobel_header;
 	strncpy(sobel_header.format, "P5", FORMAT_LEN);
